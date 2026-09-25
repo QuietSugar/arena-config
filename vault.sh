@@ -41,7 +41,7 @@ get_pass() {   # $1 = 提示语；结果放进 VAULT_PASSWORD
 }
 
 make_tar() {   # 确定性打包：同样的内容产生同样的字节，便于比对是否有变化
-  tar --sort=name --mtime='2000-01-01 00:00Z' --owner=0 --group=0 --numeric-owner --mode=go-rwx \
+  tar --sort=name --mtime='2000-01-01 00:00Z' --owner=0 --group=0 --numeric-owner --mode=a-x,u=rwX,go= \
       --exclude="$DIR/bin" -cf - "$DIR"
 }
 
