@@ -11,17 +11,28 @@
 
 ## 使用
 
+> ⚠️ **仓库是私有的**：clone 需要凭据（Deploy Key 私钥或访问令牌），
+> 由仓库所有者提供给新沙箱。拿到之后按下面步骤操作。
+
 ```bash
-git clone https://github.com/QuietSugar/arena-config.git ~/arena-config
+# 1. 写入凭据（内容由仓库所有者提供，路径以 ssh/ 里的说明为准）
+#    chmod 600 <凭据文件>
+
+# 2. 克隆（走 SSH over 443）
+git clone ssh://git@ssh.github.com:443/QuietSugar/arena-config.git ~/arena-config
 cd ~/arena-config
 
-# 解密并安装（密码由仓库所有者提供）
+# 3. 解密并安装（密码由仓库所有者提供）
 VAULT_PASSWORD='<密码>' ./vault.sh setup
 
-# 然后阅读 private/AGENTS.md 和 private/README.md
+# 4. 然后阅读 private/AGENTS.md 和 private/README.md
 ```
 
 有终端时可以省略 `VAULT_PASSWORD`，脚本会提示输入密码。
+
+> 如果哪天把本仓库改成公开，clone 就能免凭据（直接 `git clone https://…`）。
+> 但请注意：改成公开后，`vault.enc` 及其全部历史对所有人可见 —— 内容是密文，
+> 但密码一旦泄露就等于全公开。
 
 ## 修改配置
 
