@@ -1,0 +1,15 @@
+# 本环境专属文件（由 scripts/arena-import.sh 渲染，含真实主机信息）—— 绝不提交
+AGENTS.local.md
+*.local.md
+secrets.json
+secret-patterns
+
+# 临时/备份
+*.bak
+*.bak.*
+*.tmp
+*~
+.DS_Store
+
+# Go 构建产物（源代码在 cmd/，二进制走 GitHub Release 分发）
+/bin/

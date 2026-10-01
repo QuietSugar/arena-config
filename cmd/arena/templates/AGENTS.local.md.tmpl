@@ -1,0 +1,59 @@
+# 环境专属规则（由 arena import 从 secrets.json 渲染，**不要提交**）
+
+> 本文件含真实主机信息，已被 `.gitignore` 排除。公开仓里只有模板。
+> 通用规则见同目录 `AGENTS.md`；本文件是它的环境特定补充，**两者冲突时以本文件为准**。
+
+## 本环境的具体值
+
+| 角色 | 值 |
+|---|---|
+| 目标机别名 | `{{TARGET_ALIAS}}` |
+| 目标机 | `{{TARGET_USER}}@{{TARGET_HOSTNAME}}:{{TARGET_PORT}}`，内网 `{{TARGET_LAN_IP}}` |
+| 中转机 | `{{TRANSIT_HOST}}`（用户 `{{TRANSIT_USER}}`） |
+| 默认远端工作目录 | `{{DEFAULT_REMOTE_ROOT}}` |
+
+## ① 中转机规则
+
+`{{TRANSIT_HOST}}` 是**纯中转**，命中以下任意一条即为违规：
+
+- 直接 `ssh` 到它执行命令（`{{TRANSIT_ALIAS}}` 别名只允许被 `ProxyJump` 使用）
+- 读取或修改它的任何文件
+- 对它做端口扫描、指纹探测、`ssh-keyscan`
+- 在它上面"排查问题"
+
+只允许一条路径：流量经 `ssh {{TARGET_ALIAS}}` 穿过。
+
+## ② 目标机连不上时怎么办
+
+**只根据 ssh 自己的报错判断，不要自己找绕路方案。** 把报错原文交给用户，并给出对应处置：
+
+| ssh 报错 | 含义 | 给用户的话 |
+|---|---|---|
+| `banner exchange` 超时 / `kex_exchange_identification` | HTTPS 反向隧道断了 | 请在内网机器执行：`bash scripts/tunnel-reverse.sh start`（仓库内脚本，幂等、可 status/stop；无仓库时手动：`ssh -R 2222:localhost:22 {{TRANSIT_USER}}@{{TRANSIT_HOST}}`） |
+| `channel 0: open failed: connect failed: Connection refused` | 跳板转发生效，但目标端口没在听 | 同上，反向隧道没起 |
+| `REMOTE HOST IDENTIFICATION HAS CHANGED` | 主机指纹变了 | **停下来问用户**，绝不执行 `ssh-keygen -R` |
+
+不要为了让命令跑通去改 ssh 选项、换端口、找别的路径。等用户修好再重试。
+
+## ③ 主机指纹
+
+`known_hosts` 由 `arena-import.sh` 从 secrets.json 里的主机公钥生成（哈希主机名），
+因此 `StrictHostKeyChecking yes` 是开着的。指纹变了 = 要么机器重装，要么有人在中间。
+
+**停下，报告，等用户决定。** 不要 `-o StrictHostKeyChecking=no`，不要删 known_hosts 重来。
+
+## ④ 代码同步
+
+用 `arena sync`（pull → 本地改 → diff → push），**不要**用 ssh 往远端写文件
+（嵌套引号会被两层 shell 各解析一次）。详见 `docs/file-sync-workflow.md`。
+
+默认远端路径：`{{DEFAULT_REMOTE_ROOT}}`，本地镜像：`~/sync/{{SYNC_BASENAME}}/`。
+
+## ⑤ 永远不要提交私密信息
+
+本仓库是**公开仓**。`{{TRANSIT_HOST}}`、内网段、路径前缀、任何密钥
+都不得进入提交。提交前钩子会检查；模式串来自
+`~/.arena-secrets/secret-patterns`（由 secrets.json 生成）。
+
+万一误提交：**视为已泄露**，先轮换密钥与路径前缀（见 `docs/secrets-handling.md`），
+再处理仓库。删分支不等于删数据。

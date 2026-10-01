@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# pre-commit — 把「永远不要提交私密信息」变成机械约束
+#
+# 为什么需要它：公开仓一旦推出去，历史就撤不回来了。靠记性不够，靠钩子才可靠。
+#
+# 启用：git config core.hooksPath hooks   （scripts/arena-import.sh 会自动设置）
+# 跳过：git commit --no-verify            （仅在确知自己在做什么时）
+#
+# 检查项：
+#   ① 敏感文件名（密钥、凭据、本环境的 secrets.json / AGENTS.local.md 等）
+#   ② 暂存内容里的通用机密特征（私钥头、各类 token、云凭据）
+#   ③ 暂存内容里的**本环境专属**特征 —— 模式串来自 ~/.arena-secrets/secret-patterns
+#      （由 arena-import.sh 从 secrets.json 生成；公开仓里不含任何真实主机信息）
+set -u
+
+PATTERNS_FILE="$HOME/.arena-secrets/secret-patterns"
+fail=0
+red() { printf '\033[31m%s\033[0m\n' "$*"; }
+warn() { printf '\033[33m%s\033[0m\n' "$*"; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# ---------- ① 文件名 ----------
+bad_names=0
+while IFS= read -r f; do
+  case "$(basename "$f")" in
+    id_rsa|id_dsa|id_ecdsa|id_ed25519|*.pem|*.key|*.p12|*.pfx|.netrc|.git-credentials|\
+    secrets.json|*.secret|*credentials*|AGENTS.local.md|*.local.md)
+      red "  ✗ 敏感文件名，不允许提交：$f"; bad_names=1 ;;
+  esac
+done <<< "$staged"
+[ "$bad_names" = 1 ] && fail=1
+
+# ---------- ②③ 内容特征 ----------
+# 通用模式（公开、与具体环境无关）
+SECRET_PAT='BEGIN (RSA |OPENSSH |EC |DSA |PGP )?PRIVATE KEY|BEGIN OPENSSH PRIVATE|'
+SECRET_PAT+='ssh-ed25519 AAAA|ssh-rsa AAAA|ecdsa-sha2-nistp256 AAAA|'
+SECRET_PAT+='ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|gho_[A-Za-z0-9]{20,}|'
+SECRET_PAT+='AKIA[0-9A-Z]{16}|aws_secret_access_key|'
+SECRET_PAT+='xox[baprs]-[A-Za-z0-9-]{10,}|'
+SECRET_PAT+='-----BEGIN CERTIFICATE-----|'
+SECRET_PAT+='(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)[[:space:]]*=[[:space:]]*[A-Za-z0-9]{8,}'
+
+# 本环境专属模式（可选，来自 secrets.json）
+local_pat=""
+if [ -r "$PATTERNS_FILE" ]; then
+  local_pat=$(grep -vE '^\s*(#|$)' "$PATTERNS_FILE" | paste -sd'|' -)
+  [ -n "$local_pat" ] && SECRET_PAT="$SECRET_PAT|$local_pat"
+fi
+
+hits=0
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  grep -Iq . "$f" 2>/dev/null || continue      # 跳过二进制
+  # 检查规则本身（本文件与 arena scan）里就有这些模式串，用通用模式会自己撞自己。
+  # 但**仍要用本环境专属模式**扫它们 —— 有人往规则文件里贴真实 IP/域名，照样拦得住。
+  case "$f" in
+    hooks/pre-commit|cmd/arena/scan.go) pat="${local_pat:-}" ;;
+    *)                                  pat="$SECRET_PAT" ;;
+  esac
+  [ -n "$pat" ] || continue
+  m=$(grep -aoE "$pat" "$f" 2>/dev/null | sort -u | head -5)
+  if [ -n "$m" ]; then
+    red "  ✗ $f 含机密特征："
+    echo "$m" | sed 's/^/        /'
+    hits=1
+  fi
+done <<< "$staged"
+[ "$hits" = 1 ] && fail=1
+
+if [ "$fail" = 1 ]; then
+  echo
+  warn "  提交已中止。"
+  echo "    若确实需要提交（例如就是在写这个检查规则本身），用：git commit --no-verify"
+  echo "    若模式串有误报，改 ~/.arena-secrets/secret-patterns（它是本机专属，不进仓库）"
+  exit 1
+fi
+
+# ---------- 提醒（不拦截）----------
+if [ ! -r "$PATTERNS_FILE" ]; then
+  warn "  ⚠️ 未找到 $PATTERNS_FILE —— 本次只检查了通用模式。"
+  warn "     运行 arena import 导入 secrets.json 后，才会启用本环境专属检查。"
+fi
+exit 0

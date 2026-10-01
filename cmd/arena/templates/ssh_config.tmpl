@@ -1,0 +1,46 @@
+# 由 scripts/arena-import.sh 从 secrets.json 渲染生成 —— 不要直接改这个文件。
+# 要改配置请改 templates/ssh_config.tmpl，然后重新运行 arena-import.sh。
+#
+# 占位符全部来自 secrets.json，仓库里不含任何真实主机信息。
+
+# ===== 目标机（唯一通道：ProxyJump 经中转机 22）=====
+# 目标机在 NAT 后面，经反向隧道暴露为中转机上的 127.0.0.1:<PORT>。
+# 需要沙箱能出网 22；中转机只做转发，不登录、不执行命令、不探测（见 AGENTS.md）。
+Host {{TARGET_ALIAS}}
+    HostName {{TARGET_HOSTNAME}}
+    Port {{TARGET_PORT}}
+    User {{TARGET_USER}}
+    HostKeyAlias {{TARGET_HOST_KEY_ALIAS}}
+    ProxyJump {{TRANSIT_ALIAS}}
+    IdentityFile {{SSH_DIR}}/{{TARGET_KEY}}
+    IdentitiesOnly yes
+    BatchMode yes
+    ConnectTimeout 15
+    StrictHostKeyChecking yes
+    ServerAliveInterval 30
+    # 连接复用：首次握手较慢，后续连接复用同一连接（socket 按别名区分）
+    ControlMaster auto
+    ControlPath {{SSH_DIR}}/cm/%n.sock
+    ControlPersist 10m
+
+# ===== 中转机：仅供上面的 ProxyJump 使用 =====
+# ⚠️ 不要直接 ssh 到它执行命令，不要读写它的文件，不要探测它。
+Host {{TRANSIT_ALIAS}}
+    HostName {{TRANSIT_HOST}}
+    User {{TRANSIT_USER}}
+    IdentityFile {{SSH_DIR}}/{{TRANSIT_KEY}}
+    IdentitiesOnly yes
+    BatchMode yes
+    ConnectTimeout 15
+    StrictHostKeyChecking yes
+    ServerAliveInterval 30
+    SessionType none
+
+# ===== 代码托管（Deploy Key，走 443）=====
+Host {{GITHUB_ALIAS}}
+    HostName {{GITHUB_SSH_HOST}}
+    Port {{GITHUB_PORT}}
+    User {{GITHUB_USER}}
+    IdentityFile {{SSH_DIR}}/{{GITHUB_KEY}}
+    IdentitiesOnly yes
+    StrictHostKeyChecking yes
