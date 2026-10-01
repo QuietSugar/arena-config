@@ -4,18 +4,23 @@
 > 每条命令都遵循同一契约：**退出码 0 = 成功 / 1 = 业务失败 / 2 = 用法错误**，
 > 全部支持 `--json` 结构化输出（供程序消费）。想改代码请看 [AGENTS.md](AGENTS.md)。
 
+> **角色约定（先认清你是谁）**：如果你当前是**使用者**——只把这套工具当工具用——
+> 那么对仓库**只读不改**：可以查看任何文件来理解它的行为，但**不要修改源码**；
+> 发现任何问题（文档链接失效、命令报错、行为与文档不符），记录下来**反馈给维护者**。
+> 只有明确承担**维护者**角色时，才动手改代码（规矩见 [AGENTS.md](AGENTS.md)）。
+
 ## 1. 安装 arena
 
 空沙箱唯一要做的预置（需要能访问 GitHub）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/QuietSugar/arena-config/main/scripts/install-arena.sh | sh
+curl -fsSL https://raw.githubusercontent.com/QuietSugar/arena-config/master/scripts/install-arena.sh | sh
 ```
 
 - 装到 `~/bin/arena`（跨沙箱快照保留），自动完成 sha256 校验
 - 本仓库为**公开仓**，匿名下载即可；若你 fork 成了私有部署，给脚本一个有读权限的
   token（`export GITHUB_TOKEN=<有读权限的 token>`）即可
-- 指定版本：`ARENA_VERSION=v0.1.0`；指定目录：`ARENA_INSTALL_DIR=...`
+- 指定版本：`ARENA_VERSION=v0.1.1`；指定目录：`ARENA_INSTALL_DIR=...`
 - 无 Release 时（开发期）：克隆仓库后 `go build -o bin/arena ./cmd/arena`
 
 ## 2. 第一次使用
@@ -86,6 +91,10 @@ arena sync ssh 'cd <路径> && <验证命令>'   # 5. 远端验证
 ## 5. 其他场景
 
 - **换 secrets.json（轮换密钥/换环境）**：直接重新 `arena import`，幂等覆盖派生文件。
+- **known_hosts 里多出几条非 ed25519 的条目**：正常，不是指纹变了。secrets.json 只钉扎
+  ed25519 一把；若你环境的 ssh 配置启用了 `UpdateHostKeys`，连接成功后 OpenSSH 会让服务端
+  用已信任的密钥跨签证明其他类型密钥（ecdsa/rsa 等）再学入文件。严格校验仍锚在钉扎的
+  ed25519 上，学入的条目删不得也用不着 `ssh-keygen -R`。
 - **想知道 JSON 各字段含义**：`arena import --print-schema`。
 - **离线/内网环境**：本工具假定 GitHub 可达（下载二进制与 Release 更新）；不具备时
   改为在联网机器构建好二进制后拷贝进来。

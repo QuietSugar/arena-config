@@ -1,11 +1,11 @@
 #!/bin/sh
 # arena installer —— 从 GitHub Release 下载安装 arena 二进制（唯一冷启动入口）。
 #
-#   curl -fsSL https://raw.githubusercontent.com/QuietSugar/arena-config/main/scripts/install-arena.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/QuietSugar/arena-config/master/scripts/install-arena.sh | sh
 #
 # 环境变量覆盖：
 #   ARENA_INSTALL_DIR   安装目录（默认 ~/bin —— 跨沙箱快照保留；勿用 /usr/local/bin）
-#   ARENA_VERSION       指定 tag（默认 latest，例如 v0.1.0）
+#   ARENA_VERSION       指定 tag（默认自动解析 latest，例如 v0.1.1）
 #   GITHUB_TOKEN        私有仓库必填：有 repo 读权限的 token（或 GH_TOKEN）
 #                       公开仓库可省略
 set -eu
@@ -39,11 +39,22 @@ esac
 
 tag="${ARENA_VERSION:-}"
 if [ -z "$tag" ]; then
-  # 用 releases/latest 的重定向解析最新 tag（不走 API，不占配额）；私有仓库带 token
-  tag="$(auth_curl -sSI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest" | sed 's#.*/tag/##')"
+  # 解析最新 tag，两种方法依次尝试（私有仓库都会带 token）：
+  #   1. /releases/latest 的 302 Location 头（HEAD 请求，不占 API 配额）
+  #   2. GitHub API 的 tag_name（匿名可用）
+  # 有些网络环境会吃掉 HEAD 的 302（重定向不生效），方法 1 可能拿到非 tag  URL，
+  # 所以结果必须匹配 */tag/v*，否则落方法 2；都不行就报清楚的错误走显式指定。
+  location="$(auth_curl -sSI "https://github.com/$REPO/releases/latest" | tr -d '\r' | grep -i '^location:' | tail -n 1 | cut -d: -f2- | tr -d ' \t' || true)"
+  case "$location" in
+    */tag/v*) tag="${location##*/tag/}" ;;
+  esac
+  if [ -z "$tag" ]; then
+    tag="$(auth_curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep -m1 '"tag_name"' | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' || true)"
+  fi
 fi
-if [ -z "$tag" ] || [ "$tag" = "latest" ]; then
-  echo "error: 解析不到最新 release tag" >&2
+if [ -z "$tag" ]; then
+  echo "error: 解析不到最新 release tag（当前网络对 GitHub 重定向不友好？）。" >&2
+  echo "       显式指定版本重试：ARENA_VERSION=v0.1.1 curl -fsSL .../install-arena.sh | sh" >&2
   exit 1
 fi
 version="${tag#v}"
