@@ -28,8 +28,8 @@ jobs:
           for f in scripts/*.sh hooks/pre-commit; do
             bash -n "$f"
           done
-      - name: 钩子生效性（应输出 hooks）
-        run: git config core.hooksPath
+      - name: 钩子生效性（本地工作区应输出 hooks；CI 裸克隆未设置属正常）
+        run: git config core.hooksPath || echo "裸克隆未设置 hooksPath（正常，arena bootstrap 会修复）"
 
   goreleaser-check:
     runs-on: ubuntu-latest
