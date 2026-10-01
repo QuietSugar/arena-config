@@ -166,3 +166,4 @@ git config core.hooksPath                       # 应输出 hooks；空输出 = 
 - `docs/architecture.md` — 单通道链路的完整设计、安全性质、从零重建步骤
 - `docs/file-sync-workflow.md` — arena sync 用法、rsync 参数依据、顺序陷阱、连接复用、远端 git 注意事项
 - `docs/secrets-handling.md` — secrets.json 模型、三道防线、已知的坑、泄漏处置流程
+- `docs/release.md` — **版本发布流程**（推 tag 自动发版；发版时必改的三处默认版本号示例）
