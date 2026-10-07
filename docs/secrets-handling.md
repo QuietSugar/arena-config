@@ -63,8 +63,18 @@
 
 ### 坑 3：快照还会剥离可执行位
 
-`hooks/pre-commit`、`scripts/*.sh` 的文件都在，但权限变成 644。
-**别误判成「缺失」去重装** —— 重装通常会失败（网络），而其实只需 `chmod +x`。
+`~/bin/arena`、`hooks/pre-commit`、`scripts/*.sh` 的文件都在，但权限变成 `0644`。
+**别误判成「缺失」去重装**：如果 arena 自身不可执行，bootstrap 还没启动就会失败，
+无法靠它修复自己。先由系统 shell 恢复二进制执行位，再交给 bootstrap 修复其余环境：
+
+```sh
+chmod 755 "$HOME/bin/arena" && "$HOME/bin/arena" bootstrap
+```
+
+自定义安装目录时替换两处路径并保留双引号；不要对密钥或整个目录批量 `chmod`。
+`chmod` 本身不需要网络，后续 bootstrap 的自更新与连通检查仍可能联网。
+文件确实不存在则应重新安装。完整区分与排障见
+[使用手册：快照恢复急救](../USAGE.md#快照恢复急救)。
 
 ### 坑 4：OpenSSH 不认 `$HOME` 环境变量
 

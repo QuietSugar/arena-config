@@ -38,6 +38,12 @@ func runBootstrap(args []string) int {
 		case "-h", "--help":
 			fmt.Println("用法：arena bootstrap [--json] [--no-self-update]")
 			fmt.Println("自检并修复环境。退出码：0 就绪 / 1 有问题 / 2 用法错误。")
+			fmt.Println()
+			fmt.Println("快照恢复急救：若 arena 自身报 Permission denied，先在 shell 恢复执行位，再运行 bootstrap：")
+			fmt.Println(`  chmod 755 "$HOME/bin/arena" && "$HOME/bin/arena" bootstrap`)
+			fmt.Println("二进制不可执行时无法自行修复，也无法显示本帮助；可直接查阅 USAGE.md「快照恢复急救」。")
+			fmt.Println("自定义安装目录：将命令中两处路径换成实际 arena 路径，并保留双引号。")
+			fmt.Println("chmod 不依赖网络；随后 bootstrap 仍会自更新和检查连通性，追加 --no-self-update 仅跳过自更新。")
 			return 0
 		default:
 			fmt.Fprintf(os.Stderr, "bootstrap：未知参数 %s\n", a)

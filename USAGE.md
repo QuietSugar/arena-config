@@ -47,10 +47,36 @@ arena check     # 期望：[OK] 可达：<主机名> <用户>
 
 ## 3. 日常速查
 
+### 快照恢复急救
+
+如果 `~/bin/arena` 文件还在，但快照恢复后执行位被剥掉（例如变成 `0644`），
+运行它会在**本地启动阶段**报 `Permission denied`。此时连 `arena bootstrap`
+和 `arena bootstrap --help` 也无法启动，不能指望二进制先运行再修复自己。
+
+**标准首步：先由系统 shell 恢复 arena 的执行位，成功后再启动 bootstrap。**
+默认安装位置直接执行：
+
+```sh
+chmod 755 "$HOME/bin/arena" && "$HOME/bin/arena" bootstrap
+```
+
+- 恢复执行位不依赖 arena 已可执行，也不需要 Go、下载或重装。使用完整路径，
+  即使 `~/bin` 尚未加入 `PATH` 也能启动；双引号保留路径中的空格。
+- **自定义安装目录**：若安装时设置了 `ARENA_INSTALL_DIR`，将命令中两处路径
+  换成实际的 arena 文件路径，并保留双引号；只修改该二进制，不要批量修改密钥权限。
+- **文件确实不存在**时，这条命令会失败并停止；按[安装步骤](#1-安装-arena)重新安装，
+  不要把“丢执行位”和“丢文件”混为一谈。
+- `chmod` 本身不联网；后续 `bootstrap` 仍会修 git 配置/工具权限、自更新并检查目标机连通。
+  可在命令末尾追加 `--no-self-update` 跳过自更新，但它**不是离线模式**。
+- 这里的本地启动失败不同于 SSH 的 `Permission denied (publickey)`；后者仍按
+  [SSH 排障表](#4-连不上时怎么办)处理，不要靠改二进制权限解决认证问题。
+
+### 常用命令
+
 | 要做什么 | 命令 |
 |---|---|
 | 目标机通不通 | `arena check [--json]` |
-| 沙箱被回收后恢复 | `arena bootstrap`（修 git 配置/权限/工具，并自更新到最新版） |
+| 沙箱被回收后恢复 | [先恢复 arena 自身执行位](#快照恢复急救)，再运行 `arena bootstrap` |
 | 把远端代码拉下来 | `arena sync pull [远端路径]`（省略路径用导入时配置的默认根） |
 | 看 push 会改什么 | `arena sync diff [远端路径]`（**push 前必看**） |
 | 推回去 | `arena sync push [远端路径]` |

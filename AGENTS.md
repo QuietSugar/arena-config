@@ -61,6 +61,12 @@
 ## 4. 开工三步
 
 开发与使用的共同前置（完整用法与排障见 [USAGE.md](USAGE.md)）。
+
+> **快照恢复前置**：若已安装的 arena 自身因缺执行位而报 `Permission denied`，
+> 先在 shell 执行 `chmod 755 "$HOME/bin/arena"`，再运行下面的 arena 命令。
+> 自定义安装目录要换成实际路径；缺执行位时 `bootstrap` 与 `--help` 都无法启动，
+> 完整步骤见[快照恢复急救](USAGE.md#快照恢复急救)。
+
 维护者每次开工先扫一眼 [Issues](https://github.com/QuietSugar/arena-config/issues)
 ——使用者的改进诉求都记在那里（每条只写大概要求）：
 
