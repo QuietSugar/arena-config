@@ -5,7 +5,7 @@
 #
 # 环境变量覆盖：
 #   ARENA_INSTALL_DIR   安装目录（默认 ~/bin —— 跨沙箱快照保留；勿用 /usr/local/bin）
-#   ARENA_VERSION       指定 tag（默认自动解析 latest，例如 v0.1.2）
+#   ARENA_VERSION       指定 tag（默认自动解析 latest，例如 v0.1.3）
 #   GITHUB_TOKEN        私有仓库必填：有 repo 读权限的 token（或 GH_TOKEN）
 #                       公开仓库可省略
 set -eu
@@ -54,7 +54,7 @@ if [ -z "$tag" ]; then
 fi
 if [ -z "$tag" ]; then
   echo "error: 解析不到最新 release tag（当前网络对 GitHub 重定向不友好？）。" >&2
-  echo "       显式指定版本重试：ARENA_VERSION=v0.1.2 curl -fsSL .../install-arena.sh | sh" >&2
+  echo "       显式指定版本重试：ARENA_VERSION=v0.1.3 curl -fsSL .../install-arena.sh | sh" >&2
   exit 1
 fi
 version="${tag#v}"

@@ -26,7 +26,7 @@ curl -fsSL https://raw.githubusercontent.com/QuietSugar/arena-config/master/scri
 - 装到 `~/bin/arena`（跨沙箱快照保留），自动完成 sha256 校验
 - 本仓库为**公开仓**，匿名下载即可；若你 fork 成了私有部署，给脚本一个有读权限的
   token（`export GITHUB_TOKEN=<有读权限的 token>`）即可
-- 指定版本：`ARENA_VERSION=v0.1.2`；指定目录：`ARENA_INSTALL_DIR=...`
+- 指定版本：`ARENA_VERSION=v0.1.3`；指定目录：`ARENA_INSTALL_DIR=...`
 - 无 Release 时（开发期）：克隆仓库后 `go build -o bin/arena ./cmd/arena`
 
 ## 2. 第一次使用

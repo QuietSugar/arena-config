@@ -15,12 +15,12 @@
 4. 打 tag 并推送（tag 带 `v` 前缀）：
 
    ```bash
-   git tag v0.1.2
-   git push origin v0.1.2
+   git tag v0.1.3
+   git push origin v0.1.3
    ```
 
 5. 等 Actions 跑完后验证：
-   - Release 页面资产齐全：`arena_0.1.2_{linux,darwin}_{amd64,arm64}.tar.gz` + `checksums.txt`
+   - Release 页面资产齐全：`arena_0.1.3_{linux,darwin}_{amd64,arm64}.tar.gz` + `checksums.txt`
    - 匿名走一遍真实安装路径（装到临时目录，别覆盖 `~/bin/arena`）：
 
      ```bash
@@ -34,7 +34,7 @@
 
 - 二进制里的版本**不用手改**：`main.go` 的 `var version = "dev"` 由 GoReleaser
   构建时注入（`.goreleaser.yaml` 的 `-X main.version={{ .Version }}`），
-  `.Version` 取自 tag（去掉 `v`），所以 `v0.1.2` 的 `--version` 输出是 `arena 0.1.2`。
+  `.Version` 取自 tag（去掉 `v`），所以 `v0.1.3` 的 `--version` 输出是 `arena 0.1.3`。
 - 需要手改的永远只有上一步列出的**文档/脚本示例**，它们存在的意义是：
   自动解析 latest 失败的网络里，用户照抄示例也能装上当前版本。版本不一致 = 装到旧版。
 
