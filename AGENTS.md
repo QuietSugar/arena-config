@@ -60,7 +60,9 @@
 
 ## 4. 开工三步
 
-开发与使用的共同前置（完整用法与排障见 [USAGE.md](USAGE.md)）：
+开发与使用的共同前置（完整用法与排障见 [USAGE.md](USAGE.md)）。
+维护者每次开工先扫一眼 [Issues](https://github.com/QuietSugar/arena-config/issues)
+——使用者的改进诉求都记在那里（每条只写大概要求）：
 
 ```bash
 arena import --from-json /path/to/secrets.json   # 1. 导入机密（或 --from-stdin / 默认路径）
